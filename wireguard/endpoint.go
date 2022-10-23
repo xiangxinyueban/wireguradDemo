@@ -5,18 +5,46 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"vpn/iputil"
 
 	"github.com/pkg/errors"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 
 	"github.com/mysteriumnetwork/node/services/wireguard/connection/dns"
-	"github.com/mysteriumnetwork/node/services/wireguard/wgcfg"
-	"github.com/mysteriumnetwork/node/utils"
-	"github.com/mysteriumnetwork/node/utils/actionstack"
 	"github.com/mysteriumnetwork/node/utils/cmdutil"
-	"github.com/mysteriumnetwork/node/utils/netutil"
 )
+
+type DeviceConfig struct {
+	IfaceName  string    `json:"iface_name"`
+	Subnet     net.IPNet `json:"subnet"`
+	PrivateKey string    `json:"private_key"`
+	ListenPort int       `json:"listen_port"`
+	DNSPort    int       `json:"dns_port,omitempty"`
+	DNS        []string  `json:"dns"`
+	// Used only for unix.
+	DNSScriptDir string `json:"dns_script_dir"`
+
+	Peer         Peer `json:"peer"`
+	ReplacePeers bool `json:"replace_peers,omitempty"`
+
+	ProxyPort int `json:"proxy_port,omitempty"`
+}
+
+// Peer represents wireguard peer.
+type Peer struct {
+	PublicKey              string       `json:"public_key"`
+	Endpoint               *net.UDPAddr `json:"endpoint"`
+	AllowedIPs             []string     `json:"allowed_i_ps"`
+	KeepAlivePeriodSeconds int          `json:"keep_alive_period_seconds"`
+}
+
+// Stats represents wireguard peer statistics information.
+type Stats struct {
+	BytesSent     uint64    `json:"bytes_sent"`
+	BytesReceived uint64    `json:"bytes_received"`
+	LastHandshake time.Time `json:"last_handshake"`
+}
 
 type client struct {
 	iface      string
@@ -36,7 +64,7 @@ func NewWireguardClient() (*client, error) {
 	}, nil
 }
 
-func (c *client) ReConfigureDevice(config wgcfg.DeviceConfig) error {
+func (c *client) ReConfigureDevice(config DeviceConfig) error {
 	err := c.configureDevice(config)
 	if err != nil {
 		return err
@@ -45,8 +73,8 @@ func (c *client) ReConfigureDevice(config wgcfg.DeviceConfig) error {
 	return nil
 }
 
-func (c *client) ConfigureDevice(config wgcfg.DeviceConfig) error {
-	rollback := actionstack.NewActionStack()
+func (c *client) ConfigureDevice(config DeviceConfig) error {
+	rollback := NewActionStack()
 
 	if err := c.up(config.IfaceName); err != nil {
 		return err
@@ -56,7 +84,7 @@ func (c *client) ConfigureDevice(config wgcfg.DeviceConfig) error {
 	})
 
 	if config.Peer.Endpoint != nil {
-		if err := netutil.AddDefaultRoute(config.IfaceName); err != nil {
+		if err := iputil.AddDefaultRoute(config.IfaceName); err != nil {
 			rollback.Run()
 			return err
 		}
@@ -71,7 +99,7 @@ func (c *client) ConfigureDevice(config wgcfg.DeviceConfig) error {
 	return nil
 }
 
-func (c *client) configureDevice(config wgcfg.DeviceConfig) error {
+func (c *client) configureDevice(config DeviceConfig) error {
 	if err := cmdutil.SudoExec("ip", "address", "replace", "dev", config.IfaceName, config.Subnet.String()); err != nil {
 		return err
 	}
@@ -109,7 +137,7 @@ func (c *client) configureDevice(config wgcfg.DeviceConfig) error {
 	return nil
 }
 
-func peerConfig(peer wgcfg.Peer) (wgtypes.PeerConfig, error) {
+func peerConfig(peer Peer) (wgtypes.PeerConfig, error) {
 	endpoint := peer.Endpoint
 	publicKey, err := stringToKey(peer.PublicKey)
 	if err != nil {
@@ -141,17 +169,17 @@ func peerConfig(peer wgcfg.Peer) (wgtypes.PeerConfig, error) {
 	}, nil
 }
 
-func (c *client) PeerStats(string) (wgcfg.Stats, error) {
+func (c *client) PeerStats(string) (Stats, error) {
 	d, err := c.wgClient.Device(c.iface)
 	if err != nil {
-		return wgcfg.Stats{}, err
+		return Stats{}, err
 	}
 
 	if len(d.Peers) != 1 {
-		return wgcfg.Stats{}, errors.New("kernelspace: exactly 1 peer expected")
+		return Stats{}, errors.New("kernelspace: exactly 1 peer expected")
 	}
 
-	return wgcfg.Stats{
+	return Stats{
 		BytesReceived: uint64(d.Peers[0].ReceiveBytes),
 		BytesSent:     uint64(d.Peers[0].TransmitBytes),
 		LastHandshake: d.Peers[0].LastHandshakeTime,
@@ -163,7 +191,7 @@ func (c *client) DestroyDevice(name string) error {
 }
 
 func (c *client) up(iface string) error {
-	rollback := actionstack.NewActionStack()
+	rollback := NewActionStack()
 	if d, err := c.wgClient.Device(iface); err != nil || d.Name != iface {
 		if err := cmdutil.SudoExec("ip", "link", "add", "dev", iface, "type", "wireguard"); err != nil {
 			return err
@@ -182,7 +210,7 @@ func (c *client) up(iface string) error {
 }
 
 func (c *client) Close() (err error) {
-	errs := utils.ErrorCollection{}
+	errs := ErrorCollection{}
 	if err := c.DestroyDevice(c.iface); err != nil {
 		errs.Add(err)
 	}
