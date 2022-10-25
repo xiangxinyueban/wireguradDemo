@@ -1,8 +1,7 @@
-package kernelspace
+package wireguard
 
 import (
 	"fmt"
-	"github.com/mysteriumnetwork/node/services/wireguard/wgcfg"
 	"net"
 	"sync"
 	"testing"
@@ -17,11 +16,11 @@ func TestPeerStats(t *testing.T) {
 		fmt.Println("NewClient ERR:", err)
 		return
 	}
-	var config wgcfg.DeviceConfig
+	var config DeviceConfig
 	config.IfaceName = "wg1"
 	config.Subnet = net.IPNet{IP: net.ParseIP("10.77.0.6"),
 		Mask: net.IPv4Mask(255, 255, 255, 255)}
-	config.Peer = wgcfg.Peer{
+	config.Peer = Peer{
 		PublicKey: "oW6U+PnPzyJ5MN89TiD5WGCMaQ0OwR4UqIpxJM3rbAU=",
 		Endpoint: &net.UDPAddr{
 			IP:   net.ParseIP("23.94.211.103"),

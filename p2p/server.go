@@ -3,10 +3,15 @@ package p2p
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"sync"
+	"vpn/utils/iputil"
+	"vpn/utils/key"
+	"vpn/wireguard"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -17,20 +22,72 @@ import (
 
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/multiformats/go-multiaddr"
-
-	"github.com/ipfs/go-log/v2"
+	"github.com/rs/zerolog/log"
 )
 
-var logger = log.Logger("rendezvous")
+type clientConfig struct {
+	publicKey string `json:"publicKey"`
+}
+
+type serverConfig struct {
+	publicKey  string `json:"publicKey"`
+	assignedIP net.IP `json:"assignedIP"`
+	listenPort int    `json:"listenPort"`
+}
 
 func handleStream(stream network.Stream) {
-	logger.Info("Got a new stream!")
+	log.Debug().Msg("Got a new stream!")
 
 	// Create a buffer stream for none blocking read and write.
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-	go readData(rw)
-	go writeData(rw)
+	decode := json.NewDecoder(rw)
+	encode := json.NewEncoder(rw)
+	var clientConfig clientConfig
+	err := decode.Decode(&clientConfig)
+	if err != nil {
+		log.Error().Msg("ClientMsg Format Error")
+	}
+	server, err := wireguard.NewWireguardEndpoint()
+	if err != nil {
+		log.Error().Err(err)
+	}
+	config, err := wireguard.ConfigFactory()
+	if err != nil {
+		log.Error().Err(err)
+	}
+	peerIP := &net.IPNet{
+		IP:   iputil.FirstIP(config.Subnet),
+		Mask: net.CIDRMask(32, 32),
+	}
+	config.Peer = wireguard.Peer{
+		PublicKey: clientConfig.publicKey,
+		AllowedIPs: []string{
+			peerIP.String(),
+		},
+		KeepAlivePeriodSeconds: 25,
+	}
+	defer func() {
+		wireguard.DestroyConfig(config.IfaceName)
+		server.DestroyDevice(config.IfaceName)
+	}()
+	err = server.ConfigureDevice(*config)
+	if err != nil {
+		fmt.Println("config ERR:", err)
+	} else {
+		fmt.Println(config.IfaceName, "already running")
+	}
+	serverPubKey, err := key.PrivateKeyToPublicKey(config.PrivateKey)
+	if err != nil {
+		log.Error().Err(err)
+	}
+	serverConfig := serverConfig{
+		publicKey:  serverPubKey,
+		assignedIP: peerIP.IP,
+		listenPort: config.ListenPort,
+	}
+	encode.Encode()
+	//go readData(rw)
+	//go writeData(rw)
 
 	// 'stream' will stay open until you close it (or the other side closes it).
 }
@@ -79,9 +136,7 @@ func writeData(rw *bufio.ReadWriter) {
 	}
 }
 
-func () {
-	log.SetAllLoggers(log.LevelWarn)
-	log.SetLogLevel("rendezvous", "debug")
+func main() {
 	help := flag.Bool("h", false, "Display Help")
 	if err != nil {
 		panic(err)
@@ -101,8 +156,6 @@ func () {
 	if err != nil {
 		panic(err)
 	}
-	logger.Info("Host created. We are:", host.ID())
-	logger.Info(host.Addrs())
 
 	// Set a function as stream handler. This function is called when a peer
 	// initiates a connection and starts a stream with this peer.
@@ -120,7 +173,7 @@ func () {
 
 	// Bootstrap the DHT. In the default configuration, this spawns a Background
 	// thread that will refresh the peer table every five minutes.
-	logger.Debug("Bootstrapping the DHT")
+
 	if err = kademliaDHT.Bootstrap(ctx); err != nil {
 		panic(err)
 	}

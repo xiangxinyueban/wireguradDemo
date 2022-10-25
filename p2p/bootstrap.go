@@ -11,7 +11,7 @@ import (
 	mrand "math/rand"
 	"time"
 	"vpn/config"
-	"vpn/iputil"
+	"vpn/utils/iputil"
 )
 
 // BootstrapNode relay function
