@@ -53,36 +53,36 @@ type DeviceConfig struct {
 	ProxyPort int `json:"proxy_port,omitempty"`
 }
 
-type client struct {
+type Client struct {
 	iface      string
 	wgClient   *wgctrl.Client
 	dnsManager dns.Manager
 }
 
 // NewWireguardClient creates new wireguard kernel space client.
-func NewWireguardClient() (*client, error) {
+func NewWireguardClient() (*Client, error) {
 	wgClient, err := wgctrl.New()
 	if err != nil {
 		return nil, err
 	}
-	return &client{
+	return &Client{
 		wgClient:   wgClient,
 		dnsManager: dns.NewManager(),
 	}, nil
 }
 
-func NewWireguardEndpoint() (*client, error) {
+func NewWireguardEndpoint() (*Client, error) {
 	wgClient, err := wgctrl.New()
 	if err != nil {
 		return nil, err
 	}
-	return &client{
+	return &Client{
 		wgClient:   wgClient,
 		dnsManager: dns.NewManager(),
 	}, nil
 }
 
-func (c *client) ReConfigureDevice(config DeviceConfig) error {
+func (c *Client) ReConfigureDevice(config DeviceConfig) error {
 	err := c.configureDevice(config)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (c *client) ReConfigureDevice(config DeviceConfig) error {
 	return nil
 }
 
-func (c *client) ConfigureDevice(config DeviceConfig) error {
+func (c *Client) ConfigureDevice(config DeviceConfig) error {
 	rollback := actionstack.NewActionStack()
 
 	if err := c.up(config.IfaceName); err != nil {
@@ -117,7 +117,7 @@ func (c *client) ConfigureDevice(config DeviceConfig) error {
 	return nil
 }
 
-func (c *client) configureDevice(config DeviceConfig) error {
+func (c *Client) configureDevice(config DeviceConfig) error {
 	if err := cmdutil.SudoExec("ip", "address", "replace", "dev", config.IfaceName, config.Subnet.String()); err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func peerConfig(peer Peer) (wgtypes.PeerConfig, error) {
 	}, nil
 }
 
-func (c *client) PeerStats(string) (Stats, error) {
+func (c *Client) PeerStats(string) (Stats, error) {
 	d, err := c.wgClient.Device(c.iface)
 	if err != nil {
 		return Stats{}, err
@@ -203,11 +203,11 @@ func (c *client) PeerStats(string) (Stats, error) {
 	}, nil
 }
 
-func (c *client) DestroyDevice(name string) error {
+func (c *Client) DestroyDevice(name string) error {
 	return cmdutil.SudoExec("ip", "link", "del", "dev", name)
 }
 
-func (c *client) up(iface string) error {
+func (c *Client) up(iface string) error {
 	rollback := actionstack.NewActionStack()
 	if d, err := c.wgClient.Device(iface); err != nil || d.Name != iface {
 		if err := cmdutil.SudoExec("ip", "link", "add", "dev", iface, "type", "wireguard"); err != nil {
@@ -226,7 +226,7 @@ func (c *client) up(iface string) error {
 	return nil
 }
 
-func (c *client) Close() (err error) {
+func (c *Client) Close() (err error) {
 	errs := utils.ErrorCollection{}
 	if err := c.DestroyDevice(c.iface); err != nil {
 		errs.Add(err)
