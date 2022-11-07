@@ -18,12 +18,9 @@ func UserRegister(c *gin.Context) {
 func UserLogin(c *gin.Context) {
 	var userService *service.UserService
 	if err := c.ShouldBind(userService); err != nil {
-	}
-}
-
-func UserCharge(c *gin.Context) {
-	var userService *service.UserService
-
-	if err := c.ShouldBind(userService); err != nil {
+		c.JSON(400, ErrorResponse(err))
+	} else {
+		res := userService.Login()
+		c.JSON(200, res)
 	}
 }

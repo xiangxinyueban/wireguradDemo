@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"vpn/center/api"
+	"vpn/center/middleware"
 )
 
 func NewRouter() *gin.Engine {
@@ -13,10 +14,10 @@ func NewRouter() *gin.Engine {
 		userMgmt.POST("login", api.UserLogin)
 
 		authed := userMgmt.Group("/")
-		authed.Use()
+		authed.Use(middleware.JWT())
 		{
-			authed.POST("charge", api.UserCharge)
+			authed.POST("activate", api.Activate)
 		}
 	}
-
+	r.POST("CreateActivate", api.)
 }
