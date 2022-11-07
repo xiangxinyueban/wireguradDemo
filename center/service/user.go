@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"vpn/center/model"
 	"vpn/center/serializer"
+	"vpn/center/util"
 )
 
 type UserService struct {
@@ -71,18 +72,25 @@ func (service *UserService) Login() serializer.Response {
 			Error: "登录出错",
 		}
 	}
-	token, err := .GenerateToken(user.ID, service.UserName, 0)
+	token, err := util.GenerateToken(user.ID, service.UserName, 0)
 	if err != nil {
-		util.LogrusObj.Info(err)
-		code = e.ErrorAuthToken
 		return serializer.Response{
-			Status: code,
-			Msg:    e.GetMsg(code),
+			Code:  -1,
+			Error: "Message failed",
 		}
 	}
 	return serializer.Response{
-		Status: code,
-		Data:   serializer.TokenData{User: serializer.BuildUser(user), Token: token},
-		Msg:    e.GetMsg(code),
+		Code: 1,
+		Data: serializer.TokenData{User: serializer.BuildUser(user), Token: token},
+		Msg:  "登录成功",
 	}
+}
+
+type ActivateService struct {
+	UserName     string `form:"username" json:"username" binding:"required,min=3,max=15" example:"Anonymous"`
+	ActivateCode string `form:"activatecode" json:"activatecode" binding:"required,min=10,max=40 " example:"Anonymous"`
+}
+
+func (as *ActivateService) Activate() serializer.Response {
+
 }

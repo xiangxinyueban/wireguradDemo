@@ -20,6 +20,7 @@ type CreateResponse struct {
 	Data []interface{} `json:"data,omitempty"`
 }
 
+// @TODO: 支付系统集成。
 type CreateParam struct {
 	PayId int64
 	Type  int
