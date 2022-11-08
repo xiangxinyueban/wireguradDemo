@@ -48,17 +48,27 @@ func ParseToken(token string) (*Claims, error) {
 type ActivationClaims struct {
 	Duration int
 	Valid    string
+<<<<<<< HEAD
 	Flux     int
 	jwt.StandardClaims
 }
 
 func GenerateActivation(duration int, flux int) (string, error) {
+=======
+	jwt.StandardClaims
+}
+
+func GenerateActivation(duration int) (string, error) {
+>>>>>>> origin/main
 	nowTime := time.Now()
 	expireTime := nowTime.Add(10 * time.Minute)
 	claims := ActivationClaims{
 		Duration: duration,
 		Valid:    "激活码",
+<<<<<<< HEAD
 		Flux:     flux,
+=======
+>>>>>>> origin/main
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			Issuer:    "to-do-list",
