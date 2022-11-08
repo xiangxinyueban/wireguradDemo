@@ -16,5 +16,11 @@ func Activate(c *gin.Context) {
 }
 
 func CreateActivation(c *gin.Context) {
-
+	var create *service.CreateActivationService
+	if err := c.ShouldBind(create); err != nil {
+		c.JSON(400, ErrorResponse(err))
+	} else {
+		res := create.GenerateActivation()
+		c.JSON(200, res)
+	}
 }

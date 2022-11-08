@@ -19,5 +19,6 @@ func NewRouter() *gin.Engine {
 			authed.POST("activate", api.Activate)
 		}
 	}
-	r.POST("CreateActivate", api.)
+	r.POST("createActivation", api.CreateActivation)
+	return r
 }

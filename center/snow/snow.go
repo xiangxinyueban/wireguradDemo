@@ -2,6 +2,7 @@ package snow
 
 import (
 	"errors"
+	"log"
 	"sync"
 	"time"
 )
@@ -12,6 +13,16 @@ type SNOW struct {
 	snow          int64
 	lastTimeStamp int64
 	lock          sync.Mutex
+}
+
+var SN *SNOW
+
+func init() {
+	var err error
+	SN, err = NewSnow(1)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func (snow *SNOW) initTimeStamp() {

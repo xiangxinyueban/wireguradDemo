@@ -1,6 +1,9 @@
-package center
+package main
 
-import "vpn/center/model"
+import (
+	"vpn/center/model"
+	"vpn/center/router"
+)
 
 // register -> login -> combo list -> save combo type in user config
 // combo list -> create order -> order success ->
@@ -15,7 +18,8 @@ import "vpn/center/model"
 // role?
 //
 
-func BootStrap() {
+func main() {
 	model.InitDB()
-
+	r := router.NewRouter()
+	r.Run(":9090")
 }
