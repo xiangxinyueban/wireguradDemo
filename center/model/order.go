@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-type Order struct {
+type Orders struct {
 	gorm.Model
-	User          User  `gorm:"ForeignKey:Uid"`
-	Uid           uint  `gorm:"not null"`
-	ComboType     int   `gorm:"default:1"`
-	RemainTraffic int64 `gorm:"default:0"`
+	User          User `gorm:"ForeignKey:Uid"`
+	Uid           uint `gorm:"not null"`
+	ComboType     byte
+	RemainTraffic int64
 	StartTime     time.Time
 	EndTime       time.Time
 }

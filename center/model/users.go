@@ -46,7 +46,7 @@ func InitDB() {
 	sqlDB.SetMaxIdleConns(20)
 	sqlDB.SetMaxOpenConns(100)
 	DB = db
-	err = DB.AutoMigrate(&User{}, &Order{})
+	err = DB.AutoMigrate(&User{}, &Orders{}, &Session{}, &Blade{})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -46,11 +46,11 @@ func (as *ActivateService) Activate() serializer.Response {
 			Error: "激活码有误",
 		}
 	}
-	var order model.Order
+	var order model.Orders
 	order.RemainTraffic = int64(claims.Flux) * 1024 * 1024 * 1024
 	order.StartTime = time.Now()
 	order.EndTime = order.StartTime.Add(time.Duration(claims.Duration) * 24 * time.Hour)
-	order.Uid = user.UserId
+	order.Uid = user.ID
 	if err := model.DB.Create(&order).Error; err != nil {
 		return serializer.Response{
 			Code:  -1,

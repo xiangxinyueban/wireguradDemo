@@ -10,7 +10,7 @@ import (
 type UserService struct {
 	UserName string `form:"username" json:"username" binding:"required,min=3,max=15" example:"Anonymous"`
 	Password string `form:"password" json:"password" binding:"required,min=8,max=40" example:"Anonymous"`
-	Email    string `form:"email" json:"email" binding:"required,min=7,max=40" example:"Anonymous"`
+	Email    string `form:"email" json:"email" binding:"-" example:"Anonymous"`
 }
 
 func (service *UserService) Register() serializer.Response {

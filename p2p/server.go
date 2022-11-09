@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 	"vpn/config"
+	pb "vpn/proto"
 	"vpn/utils/iputil"
 	"vpn/utils/key"
 	"vpn/wireguard"
@@ -37,6 +38,16 @@ type serverConfig struct {
 
 var ConfigMap map[string]*wireguard.DeviceConfig
 var ServerMap map[string]*wireguard.Client
+var TrafficMap map[string]uint64
+
+var TotalBytes uint64
+
+func init() {
+	ConfigMap = make(map[string]*wireguard.DeviceConfig)
+	ServerMap = make(map[string]*wireguard.Client)
+	TrafficMap = make(map[string]uint64)
+	TotalBytes = 0
+}
 
 func HandleSessionEstablish(sessionId string, userId string) error {
 	// libp2p.New constructs a new libp2p Host. Other options can be added
@@ -134,7 +145,8 @@ func HandleSessionEstablish(sessionId string, userId string) error {
 	// Let's connect to the bootstrap nodes first. They will tell us about the
 	// other nodes in the network.
 	var wg sync.WaitGroup
-	for _, peerAddr := range config.P2pConfig.BootstrapPeers {
+	lcfg := config.InitLocalConfig()
+	for _, peerAddr := range lcfg.BootstrapPeers {
 		peerinfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
 		wg.Add(1)
 		go func() {
@@ -205,4 +217,27 @@ func HandleSessionDeletion(sessionID string, userID string) (uint64, error) {
 	wireguard.DestroyConfig(deviceConfig.IfaceName)
 	server.Close()
 	return stats.BytesSent + stats.BytesReceived, nil
+}
+
+func PeerStats() (res []*pb.SessionInfo) {
+	for sessionID, wgserver := range ServerMap {
+		stats, err := wgserver.PeerStats("")
+		var trafficDelta uint64
+		if TrafficMap[sessionID] == 0 {
+			trafficDelta = stats.BytesSent + stats.BytesReceived
+		} else {
+			trafficDelta = stats.BytesSent + stats.BytesReceived - TrafficMap[sessionID]
+		}
+		TotalBytes += trafficDelta
+		TrafficMap[sessionID] = stats.BytesSent + stats.BytesReceived
+		if err != nil {
+			continue
+		} else {
+			res = append(res, &pb.SessionInfo{
+				SessionID:   sessionID,
+				TrafficUsed: trafficDelta,
+			})
+		}
+	}
+	return
 }

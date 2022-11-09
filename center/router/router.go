@@ -20,5 +20,9 @@ func NewRouter() *gin.Engine {
 		}
 	}
 	r.POST("createActivation", api.CreateActivation)
+	r.GET("userSum", api.UserSum)
+	r.GET("bladeSum", api.BladeSum)
+	r.GET("userList", api.UserList)
+	r.GET("bladeList", api.BladeList)
 	return r
 }

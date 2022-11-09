@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"net"
-	conf "vpn/config"
 	"vpn/p2p"
 )
 
@@ -21,12 +19,8 @@ func main() {
 }
 
 func payloadBootStrap() {
-	node := conf.Config{
-		MonitorAddr: net.ParseIP(""),
-	}
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	p2p.BootstrapNode(ctx, "0.0.0.0", 4001, &node)
-
+	ctx, _ := context.WithCancel(context.Background())
+	p2p.BootstrapNode(ctx, "0.0.0.0", 4001)
 }
 
 func centerBootStrap() {

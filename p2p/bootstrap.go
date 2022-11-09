@@ -10,12 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 	mrand "math/rand"
 	"time"
-	"vpn/config"
 	"vpn/utils/iputil"
 )
 
+var DHTBootstrapID string
+
 // BootstrapNode relay function
-func BootstrapNode(ctx context.Context, listenHost string, port int, node *config.Config) {
+func BootstrapNode(ctx context.Context, listenHost string, port int) {
 	//init ipfs dht bootstrap node act as relay node. public iputil needed.
 
 	fmt.Printf("[*] Listening on: %s with port: %d\n", listenHost, port)
@@ -49,8 +50,7 @@ func BootstrapNode(ctx context.Context, listenHost string, port int, node *confi
 	fmt.Println("")
 	fmt.Printf("[*] Your Bootstrap ID Is: /ip4/%s/tcp/%v/p2p/%s\n", listenHost, port, host.ID())
 	publicIp := iputil.GetPublicIP()
-	bootstrapPeerId := fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", publicIp, port, host.ID())
-	node.DHTBootStrapPeerID = bootstrapPeerId
+	DHTBootstrapID = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", publicIp, port, host.ID())
 	select {
 	case <-ctx.Done():
 		return
