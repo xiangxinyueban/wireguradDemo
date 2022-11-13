@@ -19,10 +19,20 @@ func NewRouter() *gin.Engine {
 			authed.POST("activate", api.Activate)
 		}
 	}
+	//bladeMgmt := r.Group("blade")
+	//{
+	//	userMgmt.POST("register", api.BladeRegister)
+	//	userMgmt.POST("register", api.BladeRegister)
+	//	authed := userMgmt.Group("/")
+	//	authed.Use(middleware.JWT())
+	//	{
+	//		authed.POST("activate", api.Activate)
+	//	}
+	//}
 	r.POST("createActivation", api.CreateActivation)
 	r.GET("userSum", api.UserSum)
 	r.GET("bladeSum", api.BladeSum)
-	r.GET("userList", api.UserList)
-	r.GET("bladeList", api.BladeList)
+	//r.GET("userList", api.UserList) // pagination
+	//r.GET("bladeList", api.BladeList) //pagination
 	return r
 }

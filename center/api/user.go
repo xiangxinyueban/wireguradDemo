@@ -39,13 +39,13 @@ func UserSum(c *gin.Context) {
 }
 
 func BladeSum(c *gin.Context) {
-	var userService service.UserService
-	if err := c.ShouldBind(&userService); err != nil {
-		c.JSON(400, ErrorResponse(err))
-	} else {
-		res := bladeSum()
-		c.JSON(200, res)
-	}
+	//var userService service.UserService
+	//if err := c.ShouldBind(&userService); err != nil {
+	//	c.JSON(400, ErrorResponse(err))
+	//} else {
+	res := bladeSum()
+	c.JSON(200, res)
+	//}
 }
 
 func userSum() serializer.Response {
