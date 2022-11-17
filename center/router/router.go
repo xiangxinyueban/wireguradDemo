@@ -32,7 +32,10 @@ func NewRouter() *gin.Engine {
 	r.POST("createActivation", api.CreateActivation)
 	r.GET("userSum", api.UserSum)
 	r.GET("bladeSum", api.BladeSum)
-	//r.GET("userList", api.UserList) // pagination
-	//r.GET("bladeList", api.BladeList) //pagination
+	r.GET("userList", api.UserList)   // pagination
+	r.GET("bladeList", api.BladeList) //pagination
+	r.POST("bladeRegister", api.BladeRegister)
+	r.POST("sessionEstablish", api.SessionEstablish)
+	//r.POST("sessionDeletion", api.SessionDeletion)
 	return r
 }

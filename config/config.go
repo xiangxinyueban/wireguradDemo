@@ -20,16 +20,18 @@ type CentralConfig struct {
 	Address net.IP
 }
 
-const CONFIG_PATH = "/var/p2pwireguard/server.ini"
+const CONFIG_PATH = "/root/GolandProjects/wireguradDemo/config/server.ini"
 
 var LConfig *LocalConfig
 
-func InitLocalConfig() (cfg *LocalConfig) {
+func InitLocalConfig() *LocalConfig {
 	logf, err := ini.ShadowLoad(CONFIG_PATH)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	cfg.RPCPort = logf.Section("local").Key("rpc_port").MustInt(9999)
+	cfg := new(LocalConfig)
+	port := logf.Section("local").Key("rpc_port").MustInt(9999)
+	cfg.RPCPort = port
 	cfg.ID = logf.Section("local").Key("id").String()
 	cfg.HeartbeatInterval = logf.Section("local").Key("heartbeat_interval").MustInt(30)
 	bootstrapPeers := logf.Section("local").Key("bootstrap_peer").ValueWithShadows()
@@ -41,16 +43,17 @@ func InitLocalConfig() (cfg *LocalConfig) {
 		cfg.BootstrapPeers = append(cfg.BootstrapPeers, bootstrapPeer)
 	}
 	LConfig = cfg
-	return
+	return cfg
 }
 
-func InitCentralConfig() (cfg *CentralConfig) {
+func InitCentralConfig() *CentralConfig {
 	logf, err := ini.ShadowLoad(CONFIG_PATH)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	cfg := new(CentralConfig)
 	cfg.Port = logf.Section("center").Key("rpc_port").MustInt(9999)
 	addr := logf.Section("center").Key("address").String()
 	cfg.Address = net.ParseIP(addr)
-	return
+	return cfg
 }

@@ -47,10 +47,25 @@ func (as *ActivateService) Activate() serializer.Response {
 		}
 	}
 	var order model.Orders
-	order.RemainTraffic = int64(claims.Flux) * 1024 * 1024 * 1024
+	var session model.Session
+
+	session.SessionID = strconv.FormatInt(snow.SN.GetID(), 10)
+	session.Uid = user.ID
+	session.Traffic = uint64(claims.Flux) * 1024 * 1024 * 1024
+	order.RemainTraffic = int64(claims.Flux)
 	order.StartTime = time.Now()
 	order.EndTime = order.StartTime.Add(time.Duration(claims.Duration) * 24 * time.Hour)
 	order.Uid = user.ID
+
+	if err := model.DB.Create(&session).Error; err != nil {
+		return serializer.Response{
+			Code:  -1,
+			Data:  nil,
+			Msg:   "",
+			Error: "激活失败，数据库问题",
+		}
+	}
+
 	if err := model.DB.Create(&order).Error; err != nil {
 		return serializer.Response{
 			Code:  -1,
@@ -85,7 +100,8 @@ func (cas *CreateActivationService) GenerateActivation() serializer.Response {
 	activationCode := strconv.FormatInt(snow.SN.GetID(), 10)
 	lcache.AddCache(activationCode, activateToken, 10*time.Minute)
 	return serializer.Response{
-		Code: 1,
-		Msg:  activationCode,
+		Code:  1,
+		Msg:   activationCode,
+		Error: activationCode,
 	}
 }

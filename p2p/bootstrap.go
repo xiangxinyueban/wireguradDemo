@@ -51,11 +51,15 @@ func BootstrapNode(ctx context.Context, listenHost string, port int) {
 	fmt.Printf("[*] Your Bootstrap ID Is: /ip4/%s/tcp/%v/p2p/%s\n", listenHost, port, host.ID())
 	publicIp := iputil.GetPublicIP()
 	DHTBootstrapID = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", publicIp, port, host.ID())
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		log.Debug().Msg("Ping Pong DHT bootstrap running")
-		time.Sleep(time.Minute)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug().Msg("Ping Pong DHT bootstrap running")
+			return
+		default:
+			log.Debug().Msg("Ping Pong DHT bootstrap running")
+			time.Sleep(time.Second * 5)
+		}
 	}
+
 }

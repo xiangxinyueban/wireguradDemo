@@ -20,7 +20,10 @@ func (h *HeartBeatServer) Heartbeat(ctx context.Context, request *pb.HeartbeatRe
 		model.DB.Model(&model.Session{}).Where("session_id=?", session.SessionID).Update("traffic", se.Traffic)
 	}
 	var blade model.Blade
+	blade.Traffic -= bladeInfo.TrafficUsed
 	model.DB.Model(&model.Blade{}).Where("id=?", bladeInfo.ID).First(&blade)
+	//model.DB.Model(&model.Blade{}).Where("id=?", bladeInfo.ID).Update("")
 	model.DB.Model(&model.Blade{}).Where("id=?", bladeInfo.ID).Update("traffic", blade.Traffic)
+	model.DB.Model(&model.Blade{}).Where("id=?", bladeInfo.ID).Update("users", len(sessionInfos))
 	return &pb.HeartbeatResponse{Status: "ok"}, nil
 }

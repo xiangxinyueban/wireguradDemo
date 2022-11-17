@@ -1,4 +1,4 @@
-package main
+package center
 
 import (
 	"github.com/rs/zerolog/log"
@@ -10,29 +10,17 @@ import (
 	pb "vpn/proto"
 )
 
-// register -> login -> combo list -> save combo type in user config
-// combo list -> create order -> order success ->
-// server list(country) -> establish session -> Success page()
-// delete session
-
-// mysql struct
-// user:
-// UserName, Password, UserId, Email
-// task:
-// ComboType, RemainTraffic, ExpireTime, UserId,
-// role?
-//
-
-func main() {
+func CenterStart() {
 	model.InitDB()
 	r := router.NewRouter()
 	go func() {
-		ls, err := net.Listen("tcp4", "0.0.0.0:9191")
+		ls, err := net.Listen("tcp4", "0.0.0.0:9001")
 		if err != nil {
 			log.Fatal().Msgf("rpc server start failed: %v", err)
 		}
 
 		s := grpc.NewServer()
+		log.Debug().Msg("heartbeat RPC server ready")
 		pb.RegisterHeartbeatManagerServer(s, &heartbeat.HeartBeatServer{})
 		if err := s.Serve(ls); err != nil {
 			log.Fatal().Msgf("rpc server start failed: %v", err)

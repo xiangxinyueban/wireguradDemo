@@ -3,6 +3,7 @@ package netutil
 import (
 	"net"
 	"os/exec"
+	"strconv"
 	"strings"
 	"vpn/utils/cmdutil"
 	"vpn/utils/iputil"
@@ -63,8 +64,8 @@ func iptablesinit(iface string, port int, subnet net.IPNet) error {
 	if err := cmdutil.SudoExec("iptables", "-I", "FORWARD", "1", "-i", outface, "-o", iface, "-j", "ACCEPT"); err != nil {
 		return err
 	}
-
-	if err := cmdutil.SudoExec("iptables", "-I", "INPUT", "1", "-i", outface, "-p", "udp", "--dport", port, "-j", "ACCEPT"); err != nil {
+	portstr := strconv.Itoa(port)
+	if err := cmdutil.SudoExec("iptables", "-I", "INPUT", "1", "-i", outface, "-p", "udp", "--dport", portstr, "-j", "ACCEPT"); err != nil {
 		return err
 	}
 	return nil

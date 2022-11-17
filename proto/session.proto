@@ -11,7 +11,7 @@ service SessionManager {
 
 message SessionEstablishRequest {
   string SessionID = 1;
-  string UserID = 2;
+  uint32 UserID = 2;
 }
 
 message SessionEstablishResponse {
@@ -20,7 +20,7 @@ message SessionEstablishResponse {
 
 message SessionDeletionRequest {
   string SessionID = 1;
-  string UserID = 2;
+  uint32 UserID = 2;
 }
 
 message SessionDeletionResponse {

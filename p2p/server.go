@@ -49,7 +49,7 @@ func init() {
 	TotalBytes = 0
 }
 
-func HandleSessionEstablish(sessionId string, userId string) error {
+func HandleSessionEstablish(sessionId string, userId uint32) error {
 	// libp2p.New constructs a new libp2p Host. Other options can be added
 	// here.
 	host, err := libp2p.New(libp2p.ListenAddrs([]multiaddr.Multiaddr(nil)...))
@@ -123,7 +123,7 @@ func HandleSessionEstablish(sessionId string, userId string) error {
 	}
 	// Set a function as stream handler. This function is called when a peer
 	// initiates a connection and starts a stream with this peer.
-	host.SetStreamHandler(protocol.ID(userId), handleStream)
+	host.SetStreamHandler(protocol.ID(sessionId), handleStream)
 
 	// Start a DHT, for use in peer discovery. We can't just make a new DHT
 	// client because we want each peer to maintain its own local copy of the
@@ -196,7 +196,7 @@ func HandleSessionEstablish(sessionId string, userId string) error {
 	return nil
 }
 
-func HandleSessionDeletion(sessionID string, userID string) (uint64, error) {
+func HandleSessionDeletion(sessionID string, userID uint32) (uint64, error) {
 	var deviceConfig *wireguard.DeviceConfig
 	var ok bool
 	var server *wireguard.Client
@@ -214,6 +214,7 @@ func HandleSessionDeletion(sessionID string, userID string) (uint64, error) {
 	}
 	delete(ConfigMap, sessionID)
 	delete(ServerMap, sessionID)
+	delete(TrafficMap, sessionID)
 	wireguard.DestroyConfig(deviceConfig.IfaceName)
 	server.Close()
 	return stats.BytesSent + stats.BytesReceived, nil
@@ -230,6 +231,9 @@ func PeerStats() (res []*pb.SessionInfo) {
 		}
 		TotalBytes += trafficDelta
 		TrafficMap[sessionID] = stats.BytesSent + stats.BytesReceived
+		if time.Now().Sub(stats.LastHandshake) > 25*3*time.Second {
+			HandleSessionDeletion(sessionID, 0)
+		}
 		if err != nil {
 			continue
 		} else {
